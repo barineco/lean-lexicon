@@ -4,7 +4,7 @@
 
 Formal verification of AT Protocol's Lexicon as a typed universe in Lean 4 / Mathlib.
 
-**183 theorems/lemmas, zero sorry.** Lean v4.29.0, Mathlib v4.29.0.
+**246 theorems/lemmas, zero sorry.** Lean v4.29.0, Mathlib v4.29.0.
 
 ## Overview
 
@@ -19,7 +19,7 @@ Composing the two yields `{identifier, password} → createSession → getProfil
 
 ## Lean's Role
 
-[Laplan](https://github.com/barineco/laplan)'s solver finds paths. Lean provides **semantic guarantees** for those results: a proof layer covering path correctness, constraint effects, and missing-information classification.
+[Laplan](https://github.com/barineco/laplan)'s solver finds paths. Lean provides a **semantic guarantee** proof layer for those results, covering path correctness, constraint effects, and missing-information classification.
 
 ## Verified Theorems
 
@@ -88,6 +88,17 @@ Key individual theorems:
 | `branch_is_dispatch_then_seq` | branch = union dispatch + morphism composition |
 | `timed_filter_expiry` | Timed token expiry |
 
+### Monotonicity and Level Collapse
+
+| Theorem group | Module | Content |
+|---|---|---|
+| Guard/fire monotonicity | Monotonicity | Monotone with respect to marking inclusion (WSTS membership) |
+| Consume-aware monotonicity | Monotonicity | RichTransition.fire = (m \ C) ∪ P is monotone |
+| No inhibitor arcs | Monotonicity | Only positive membership tests; no token disables a transition |
+| Level collapse | Collapse | No hierarchy above Lex1: composition, branching, and enumeration stay in Lex1 |
+
+The only real boundary is between Lex0 (types) and Lex1 (morphisms). Above Lex1, all "levels" (endpoint composition, branching, user interaction sequences) remain within `TypedTransition`. Evidence: `TypedTransition.seq` returns `TypedTransition` (closure), `branch_is_dispatch_then_seq` (branching reduces to dispatch + composition), `searchAll` (exhaustive path enumeration). The distinction between "Lex2 (functor)" and "Lex1 (morph)" is observational granularity (how much internal branching is exposed), not computational kind.
+
 ## Four Perspectives
 
 **Tarski universe**: Lexicon schemas are type names (codes); endpoint behavior is type content (interpretation). Type names alone do not determine interpretation. Annotations fix interpretation.
@@ -118,6 +129,10 @@ Key individual theorems:
 | `Bridge` | Cross-validation against solver search results |
 | `Universe` | Lexicon₀/₁ universe separation, encoding non-canonicity |
 | `Transition` | Category structure, composition equivalence, type-level branching |
+| `Monotonicity` | Guard and firing monotonicity; no inhibitor arcs (WSTS membership). RichTransition (with consumes) monotonicity |
+| `Collapse` | Levels above Lex1 collapse: composition, branching, enumeration all stay in Lex1 |
+
+`*Demo`, `Observe`, `Diff`, `Materialize`, `GoalSelection` are concrete verification and experiment modules, not listed above.
 
 ### Dependencies
 
@@ -131,9 +146,11 @@ Basic
 │   ├── Universe
 │   └── Transition
 ├── Reachability
+│   ├── Monotonicity [← Transition]
 │   └── Search
 │       └── Witness
-│           └── Bridge
+│           ├── Bridge
+│           └── Collapse [← Transition]
 ├── ConstraintProfiles
 ├── NonRecoverability
 └── RequirementSatisfaction
@@ -149,6 +166,8 @@ Basic
 | `Search` | Solver (BFS path search) |
 | `Witness` | Serial recipe |
 | `Needs` | Needs assessment (5-layer diagnostics) |
+| `Monotonicity` (RichTransition) | Solver Execute mode (with consumes) |
+| `Collapse` | Solver fuel parameter (justification for bounded search) |
 
 ## Build
 

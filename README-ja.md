@@ -4,7 +4,7 @@
 
 AT Protocol の Lexicon を Lean 4 / Mathlib で形式化するプロジェクト。
 
-**183 定理/補題、zero sorry。** Lean v4.29.0, Mathlib v4.29.0。
+**246 定理/補題、zero sorry。** Lean v4.29.0, Mathlib v4.29.0。
 
 ## 概要
 
@@ -19,7 +19,7 @@ getProfile:    {accessJwt, actor}     → {profileViewDetailed}
 
 ## Lean の役割
 
-経路を見つけるのは [Laplan](https://github.com/barineco/laplan) の solver。Lean は solver が返す結果に**意味論的な保証**を与える proof layer: 経路の正しさ、制約の効果、不足情報の分類。
+経路を見つけるのは [Laplan](https://github.com/barineco/laplan) の solver。Lean は solver が返す結果に**意味論的な保証**を与える proof layer を提供する。対象は経路の正しさ、制約の効果、不足情報の分類。
 
 ## 検証された定理
 
@@ -88,6 +88,17 @@ getProfile:    {accessJwt, actor}     → {profileViewDetailed}
 | `branch_is_dispatch_then_seq` | 分岐 = union dispatch + 射の合成 |
 | `timed_filter_expiry` | 時間制約付き token の失効 |
 
+### 単調性と階層の崩壊
+
+| 定理群 | モジュール | 内容 |
+|---|---|---|
+| guard/fire の単調性 | Monotonicity | marking の包含に対する単調性 (WSTS 所属) |
+| consumes ありの単調性 | Monotonicity | RichTransition.fire = (m \ C) ∪ P が単調 |
+| inhibitor arc の不在 | Monotonicity | 正のメンバーシップテストのみ → 遷移を無効化するトークンがない |
+| 階層の崩壊 | Collapse | Lex1 より上は潰れる: 合成・分岐・列挙はすべて Lex1 に留まる |
+
+Lex0 (型) と Lex1 (射) の間にのみ実在の壁がある。Lex1 より上の「レベル」(endpoint の合成、条件分岐、ユーザー操作列) はすべて `TypedTransition` に留まる。根拠: `TypedTransition.seq` が `TypedTransition` を返す (合成の閉性)、`branch_is_dispatch_then_seq` (分岐の還元)、`searchAll` (全経路の列挙)。「Lex2 (functor)」と「Lex1 (morph)」の区別は、内部の分岐をどこまで展開するかという観測粒度の問題であり、計算量的性質ではない。
+
 ## 4 つの見方
 
 **Tarski 宇宙**: Lexicon のスキーマを型の名前 (code)、endpoint の動作を型の中身 (解釈) と見る。型の名前だけでは解釈が一意に定まらない。注釈が解釈を確定させる。
@@ -118,6 +129,10 @@ getProfile:    {accessJwt, actor}     → {profileViewDetailed}
 | `Bridge` | Rust solver の探索結果との突き合わせ検証 |
 | `Universe` | Lexicon₀/₁ の宇宙レベル分離、encoding の非正準性 |
 | `Transition` | 遷移の圏構造、合成等価性、型レベル条件分岐 |
+| `Monotonicity` | guard と fire の単調性、inhibitor arc の不在 (WSTS 所属)。RichTransition (consumes あり) の単調性も証明 |
+| `Collapse` | Lex1 より上の階層は潰れる: 合成・分岐・列挙はすべて Lex1 に留まる |
+
+`*Demo`, `Observe`, `Diff`, `Materialize`, `GoalSelection` は具体例の検証・実験用。上の表には含めていない。
 
 ### 依存関係
 
@@ -131,9 +146,11 @@ Basic
 │   ├── Universe
 │   └── Transition
 ├── Reachability
+│   ├── Monotonicity [← Transition]
 │   └── Search
 │       └── Witness
-│           └── Bridge
+│           ├── Bridge
+│           └── Collapse [← Transition]
 ├── ConstraintProfiles
 ├── NonRecoverability
 └── RequirementSatisfaction
@@ -149,6 +166,8 @@ Basic
 | `Search` | solver (BFS 経路探索) |
 | `Witness` | serial recipe |
 | `Needs` | needs assessment (5 層診断) |
+| `Monotonicity` (RichTransition) | solver の Execute モード (consumes あり) |
+| `Collapse` | solver の fuel パラメータ (有界探索の正当化) |
 
 ## ビルド
 

@@ -29,3 +29,5 @@ import Lexicon.DiffDemo
 import Lexicon.GoalSelection
 import Lexicon.Universe
 import Lexicon.Transition
+import Lexicon.Monotonicity
+import Lexicon.Collapse
