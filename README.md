@@ -4,7 +4,7 @@
 
 Formal verification of AT Protocol's Lexicon as a typed universe in Lean 4 / Mathlib.
 
-**246 theorems/lemmas, zero sorry.** Lean v4.29.0, Mathlib v4.29.0.
+**254 theorems/lemmas, zero sorry.** Lean v4.29.0, Mathlib v4.29.0.
 
 ## Overview
 
@@ -99,6 +99,26 @@ Key individual theorems:
 
 The only real boundary is between Lex0 (types) and Lex1 (morphisms). Above Lex1, all "levels" (endpoint composition, branching, user interaction sequences) remain within `TypedTransition`. Evidence: `TypedTransition.seq` returns `TypedTransition` (closure), `branch_is_dispatch_then_seq` (branching reduces to dispatch + composition), `searchAll` (exhaustive path enumeration). The distinction between "Lex2 (functor)" and "Lex1 (morph)" is observational granularity (how much internal branching is exposed), not computational kind.
 
+### Termination (Consume-Aware Model)
+
+| Theorem group | Module | Content |
+|---|---|---|
+| Consume-aware paths | Termination | RichReachesBy: inductive path definition with consumes |
+| Universe closure | Termination | fire preserves a finite fact universe |
+| Visited-set termination | Termination | Search space bounded by 2^|U|; gap strictly decreases per step |
+| Consumes cycle detection | Termination | A/B cycles are caught by the visited set |
+
+With consumes (exclusive resource consumption), markings can shrink, so path-level termination is not obvious. The Rust solver uses a visited set to prevent revisiting the same marking. The Termination module proves this strategy terminates in finitely many steps.
+
+Key individual theorems:
+
+| Theorem | Content |
+|---|---|
+| `fire_within_universe` | Consume-aware fire stays within a finite universe |
+| `visited_card_le_powerset` | Visited set size is at most 2^|U| |
+| `searchGap_decreases` | Adding a new marking strictly decreases the search gap |
+| `consumes_cycle_revisits` | A;B cycle returns to the initial marking |
+
 ## Four Perspectives
 
 **Tarski universe**: Lexicon schemas are type names (codes); endpoint behavior is type content (interpretation). Type names alone do not determine interpretation. Annotations fix interpretation.
@@ -130,6 +150,7 @@ The only real boundary is between Lex0 (types) and Lex1 (morphisms). Above Lex1,
 | `Universe` | Lexicon₀/₁ universe separation, encoding non-canonicity |
 | `Transition` | Category structure, composition equivalence, type-level branching |
 | `Monotonicity` | Guard and firing monotonicity; no inhibitor arcs (WSTS membership). RichTransition (with consumes) monotonicity |
+| `Termination` | Consume-aware model termination. Formal justification of visited-set search termination |
 | `Collapse` | Levels above Lex1 collapse: composition, branching, enumeration all stay in Lex1 |
 
 `*Demo`, `Observe`, `Diff`, `Materialize`, `GoalSelection` are concrete verification and experiment modules, not listed above.
@@ -147,6 +168,7 @@ Basic
 │   └── Transition
 ├── Reachability
 │   ├── Monotonicity [← Transition]
+│   │   └── Termination
 │   └── Search
 │       └── Witness
 │           ├── Bridge
@@ -167,6 +189,7 @@ Basic
 | `Witness` | Serial recipe |
 | `Needs` | Needs assessment (5-layer diagnostics) |
 | `Monotonicity` (RichTransition) | Solver Execute mode (with consumes) |
+| `Termination` (RichReachesBy) | Solver visited-set termination guarantee |
 | `Collapse` | Solver fuel parameter (justification for bounded search) |
 
 ## Build

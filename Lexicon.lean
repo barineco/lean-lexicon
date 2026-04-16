@@ -30,4 +30,5 @@ import Lexicon.GoalSelection
 import Lexicon.Universe
 import Lexicon.Transition
 import Lexicon.Monotonicity
+import Lexicon.Termination
 import Lexicon.Collapse
